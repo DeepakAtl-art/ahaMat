@@ -35,13 +35,14 @@ const updateUserDetails = async (userId, updatedFields) => {
 
 const getQuickSearch = async (gender, min_age, max_age, religion, caste, sub_caste, marital_status) => {
   const QUICK_SEARCH = `
-        SELECT * FROM user_profiles 
-        WHERE gender = ? 
-        AND age BETWEEN ? AND ? 
-        AND religion = ? 
-        AND caste = ? 
-        AND sub_caste = ? 
-        AND marital_status = ?
+    SELECT * FROM user_profiles 
+    WHERE (? IS NULL OR gender = ?)
+      AND (? IS NULL OR age >= ?)
+      AND (? IS NULL OR age <= ?)
+      AND (? IS NULL OR religion = ?)
+      AND (? IS NULL OR caste = ?)
+      AND (? IS NULL OR sub_caste = ?)
+      AND (? IS NULL OR marital_status = ?)
   `;
 
   console.log("This is a quick search function!");
@@ -50,7 +51,15 @@ const getQuickSearch = async (gender, min_age, max_age, religion, caste, sub_cas
   return new Promise((resolve, reject) => {
       connection.query(
           QUICK_SEARCH, 
-          [gender, min_age, max_age, religion, caste, sub_caste, marital_status], // ✅ Fixed missing min_age & max_age
+          [
+            gender, gender,
+            min_age, min_age,
+            max_age, max_age,
+            religion, religion,
+            caste, caste,
+            sub_caste, sub_caste,
+            marital_status, marital_status
+          ], // ✅ Fixed missing min_age & max_age
           (err, results) => {
               if (err) {
                   return reject({ status: 500, error: "Database error" }); // ✅ Fixed `status_is`
@@ -125,7 +134,7 @@ const loginCheck = async (email, password) => {
 
 
   const 
-  createUser = async (name, email, phone, password) => {
+  createUser = async (name, email, phone, password, gender) => {
 
     const role = gender === "Female" ? "moderator" : "user";
 
@@ -204,7 +213,8 @@ const getAllProfile = async () => {
 
 
   const getProfile = async (register_id) => {
-    const GET_USER_PROFILE = `SELECT * FROM user_profiles WHERE linked_to = ?`;
+    console.log("This is log function");
+    const GET_USER_PROFILE = `SELECT * FROM user_profiles WHERE id = ?`;
 
     return new Promise((resolve, reject) => {
         connection.query(GET_USER_PROFILE, [register_id], (err, result) => {
@@ -218,6 +228,27 @@ const getAllProfile = async () => {
         });
     });
 };
+
+
+const getViewProfile = async (register_id) => {
+  console.log("This is log function");
+  const GET_USER_PROFILE = `SELECT * FROM user_profiles WHERE linked_to = ?`;
+
+  return new Promise((resolve, reject) => {
+      connection.query(GET_USER_PROFILE, [register_id], (err, result) => {
+          if (err) {
+              reject(new Error("Error fetching user: " + err));
+          } else if (result.length === 0) {
+              reject(new Error("User not found"));
+          } else {
+              resolve(result[0]); // Return first matching user
+          }
+      });
+  });
+};
+
+
+
 
 
 
@@ -262,4 +293,4 @@ const updateProfile = async (userId, updatedFields) => {
 };
 
 
-module.exports = { updateUserDetails, loginCheck, createUser, getAllProfile, getProfile, updateProfile, addUserInterests, getQuickSearch};
+module.exports = { updateUserDetails, loginCheck, createUser, getAllProfile, getProfile, getViewProfile, updateProfile, addUserInterests, getQuickSearch};

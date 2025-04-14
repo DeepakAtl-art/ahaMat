@@ -19,7 +19,7 @@ const connection = require('./Config/config');
 
 
 
-const {loginCheck, createUser,getAllProfile, getProfile, updateProfile, addUserInterests, getQuickSearch} = require ('./Services/userServices');
+const {loginCheck, createUser,getAllProfile, getProfile,getViewProfile,  updateProfile, addUserInterests, getQuickSearch} = require ('./Services/userServices');
 const {authenticateToken, authorizeRoles } = require('./Auth/middleware')
 require("dotenv").config();
 
@@ -204,13 +204,16 @@ router.post(
         // Convert boolean fields correctly
         const horoscope_required = cleanedBody.horoscope_required === "true" ? 1 : 0;
   
-        // Handle File Uploads
+        // H``andle File Uploads
         const image_1 = req.files?.image_1?.[0]?.path || null;
         const image_2 = req.files?.image_2?.[0]?.path || null;
   
         // Ensure created_by and linked_to are numbers or NULL
         const createdBy = created_by ? parseInt(created_by, 10) : null;
         const linkedTo = linked_to ? parseInt(linked_to, 10) : null;
+
+        console.log("Created By:", createdBy);
+        console.log("Linked To:", linkedTo);
   
         // SQL Query
         const query = `
@@ -309,6 +312,26 @@ router.get('/profile/:id', async (req, res) => {
 });
 
 
+
+router.get('/view-profile/:id', async (req, res) => {
+  const { id } = req.params;  // Get the ID from the URL
+
+  try {
+      const result = await getViewProfile(id); // Call the function to fetch the profile
+      res.status(200).json({ 
+          status: 200,
+          message: "Profile fetched successfully",
+          data: result 
+      });
+  } catch (err) {
+      res.status(500).json({ 
+          status: 500, 
+          error: err.message 
+      });
+  }
+});
+
+
 router.put('/profile/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
     const { id } = req.params; // Extract user ID from request URL
     const updatedData = req.body; // Capture fields to update from request body
@@ -387,8 +410,22 @@ router.get("/quick_search", async (req, res) =>{
 
   const {gender, min_age, max_age, religion, caste, sub_caste, marital_status} = req.query;
 
+
+
+  const filters = {
+    gender: gender === '' ? null : gender,
+    min_age: min_age === '' ? null : parseInt(min_age),
+    max_age: max_age === '' ? null : parseInt(max_age),
+    religion: religion === '' ? null : religion,
+    caste: caste === '' ? null : caste,
+    sub_caste: sub_caste === '' ? null : sub_caste,
+    marital_status: marital_status === '' ? null : marital_status,
+  };
+
+  console.log("Filters:", filters); // Log the filters to see what is being passed
+
   try{
-    const result  = await getQuickSearch(gender,  min_age, max_age, religion, caste, sub_caste, marital_status);
+    const result  = await getQuickSearch(filters.gender,  filters.min_age, filters.max_age, filters.religion, filters.caste, filters.sub_caste, filters.marital_status);
     res.status(200).json({ 
       status: 200,
       message: "Profile fetched successfully",
