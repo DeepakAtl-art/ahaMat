@@ -138,8 +138,13 @@ const loginCheck = async (email, password) => {
 
     const role = gender === "Female" ? "moderator" : "user";
 
-    const CREATE_USER = `INSERT INTO users (name, mail_id, password, phone, register_number, gender, role)
-VALUES (?, ?, ?, ?, CONCAT('REG-', LAST_INSERT_ID()), ?, ?);`;
+    const CREATE_USER = `
+INSERT INTO users (name, mail_id, password, phone, register_number, gender, role)
+VALUES (?, ?, ?, ?, 
+  CONCAT('REG-', UPPER(SUBSTRING(MD5(RAND()), 1, 6))), 
+  ?, ?);
+`;
+
 
     const SELECT_USER = `SELECT * FROM users WHERE mail_id = ?`;
 
@@ -165,7 +170,8 @@ VALUES (?, ?, ?, ?, CONCAT('REG-', LAST_INSERT_ID()), ?, ?);`;
 
                           
                           const token = jwt.sign(
-                            { user_id: user.id, role: user.role },  // Payload
+                            { user_id: user.id, 
+                              role: user.role },  // Payload
                             process.env.JWT_SECRET,                 // Secret Key (should be stored securely)
                             { expiresIn: '6h' }                     // Options (expiry time, etc.)
                         );
@@ -173,7 +179,8 @@ VALUES (?, ?, ?, ?, CONCAT('REG-', LAST_INSERT_ID()), ?, ?);`;
                             resolve({
                                 status: 200,
                                 message: 'User registered successfully!',
-                                token: token
+                                token: token,
+                                user_id: user.id,
                             });
                         }
                     });
@@ -232,8 +239,16 @@ const getAllProfile = async () => {
 
 const getViewProfile = async (register_id) => {
   console.log("This is log function");
-  const GET_USER_PROFILE = `SELECT * FROM user_profiles WHERE linked_to = ?`;
-
+  const GET_USER_PROFILE = `
+  SELECT 
+    up.*, 
+    u.mail_id, 
+    u.password,
+    u.role
+  FROM user_profiles up
+  JOIN users u ON up.linked_to = u.id
+  WHERE up.linked_to = ?;
+`;
   return new Promise((resolve, reject) => {
       connection.query(GET_USER_PROFILE, [register_id], (err, result) => {
           if (err) {
@@ -247,6 +262,22 @@ const getViewProfile = async (register_id) => {
   });
 };
 
+
+const resetUserPassword = (user_id, new_password_hash) => {
+  const RESET_PASSWORD_QUERY = "UPDATE users SET password = ? WHERE mail_id = ?";
+
+  return new Promise((resolve, reject) => {
+    connection.query(RESET_PASSWORD_QUERY, [new_password_hash, user_id], (error, results) => {
+      if (error) {
+        reject({ success: false, message: "Error resetting password", error });
+      } else if (results.affectedRows === 0) {
+        reject({ success: false, message: "User not found" });
+      } else {
+        resolve({ success: true, message: "Password reset successfully" });
+      }
+    });
+  });
+};
 
 
 
@@ -293,4 +324,4 @@ const updateProfile = async (userId, updatedFields) => {
 };
 
 
-module.exports = { updateUserDetails, loginCheck, createUser, getAllProfile, getProfile, getViewProfile, updateProfile, addUserInterests, getQuickSearch};
+module.exports = { updateUserDetails, loginCheck, createUser, resetUserPassword, getAllProfile, getProfile, getViewProfile, updateProfile, addUserInterests, getQuickSearch};

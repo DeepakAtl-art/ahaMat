@@ -1,5 +1,7 @@
 const express = require('express');
 const multer = require('multer');
+const bcrypt = require('bcrypt');
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, "uploads/"); // Ensure 'uploads/' directory exists
@@ -19,7 +21,7 @@ const connection = require('./Config/config');
 
 
 
-const {loginCheck, createUser,getAllProfile, getProfile,getViewProfile,  updateProfile, addUserInterests, getQuickSearch} = require ('./Services/userServices');
+const {loginCheck, createUser,getAllProfile, getProfile,getViewProfile,resetUserPassword,  updateProfile, addUserInterests, getQuickSearch} = require ('./Services/userServices');
 const {authenticateToken, authorizeRoles } = require('./Auth/middleware')
 require("dotenv").config();
 
@@ -167,6 +169,49 @@ router.post('/createUser', (req, res) => {
 //     }
 //   );
 
+
+router.post('/reset-password',  authenticateToken,authorizeRoles('admin'),(req, res) => {
+  const { mail_id, new_password } = req.body;
+
+  if (!mail_id || !new_password) {
+    return res.status(400).json({ success: false, message: "user_id and new_password are required" });
+  }
+
+  // Hash the new password
+  bcrypt.hash(new_password, 10)
+    .then((hashedPassword) => {
+      return resetUserPassword(mail_id, hashedPassword);
+    })
+    .then((response) => {
+      res.status(200).json(response);
+    })
+    .catch((error) => {
+      console.error("Reset password error:", error);
+      res.status(500).json(error);
+    });
+});
+
+
+
+router.post('/change-role', (req, res) => {
+
+    const { user_id, new_role } = req.body;
+
+    if (!user_id || !new_role) {
+        return res.status(400).send({ error: 'User ID and new role are required' });
+    }
+
+    const UPDATE_ROLE = `UPDATE users SET role = ? WHERE id = ?`;
+
+    connection.query(UPDATE_ROLE, [new_role, user_id], (err, result) => {
+        if (err) {
+            return res.status(500).send({ error: 'Error updating role: ' + err.message });
+        }
+
+        res.status(200).send({ message: `User with ID ${user_id} has been updated to ${new_role}.` });
+    });
+
+ });
 
 router.post(
     "/registerProfile", authenticateToken, authorizeRoles('moderator', 'admin'),
