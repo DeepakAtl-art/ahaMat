@@ -39,10 +39,24 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const router = express.Router();
 
 
+router.post('/login', (req, res) => {
+
+    const { email, password } = req.body;
+
+    if(!email || !password) {
+        return res.status(400).send({ error: 'Name and email are required'});
+    }
+     loginCheck(email, password).then(result => {
+        res.status(200).send({ message: result });
+      })
+      .catch(err => {
+        res.status(500).send({ error: err.message });
+      });
+});
 
 
 
-router.post("/create-order", authenticateToken,authorizeRoles('user'), (req, res) => {
+router.post("/create-order", authenticateToken,authorizeRoles('moderator'), (req, res) => {
   const amount = 50000; // ₹500 in paise
   const currency = "INR";
   const receipt = "order_rcptid_" + Math.floor(Math.random() * 1000000);
