@@ -2,6 +2,16 @@ const express = require('express');
 const multer = require('multer');
 const bcrypt = require('bcrypt');
 
+const Razorpay = require("razorpay");
+
+const razorpay = new Razorpay({
+  key_id: "rzp_test_FaDMhj1BABXeNp",
+  key_secret: "WSfCaTByiOPQYfMwn2zNszaA",
+});
+
+
+
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, "uploads/"); // Ensure 'uploads/' directory exists
@@ -29,20 +39,31 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const router = express.Router();
 
 
-router.post('/login', (req, res) => {
 
-    const { email, password } = req.body;
 
-    if(!email || !password) {
-        return res.status(400).send({ error: 'Name and email are required'});
-    }
-     loginCheck(email, password).then(result => {
-        res.status(200).send({ message: result });
-      })
-      .catch(err => {
-        res.status(500).send({ error: err.message });
-      });
+
+router.post("/create-order", authenticateToken,authorizeRoles('user'), (req, res) => {
+  const amount = 50000; // ₹500 in paise
+  const currency = "INR";
+  const receipt = "order_rcptid_" + Math.floor(Math.random() * 1000000);
+
+  const options = {
+    amount: amount,
+    currency: currency,
+    receipt: receipt,
+  };
+
+  razorpay.orders.create(options)
+    .then(order => {
+      res.status(200).send({ order }); // Send order back to frontend
+    })
+    .catch(err => {
+      console.error("Error creating Razorpay order:", err);
+      res.status(500).send({ error: "Failed to create Razorpay order" });
+    });
 });
+
+
 
 // Promote user to moderator based on register number
 router.post('/promote-to-moderator', (req, res) => {
@@ -380,6 +401,8 @@ router.get('/view-profile/:id', async (req, res) => {
 router.put('/profile/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
     const { id } = req.params; // Extract user ID from request URL
     const updatedData = req.body; // Capture fields to update from request body
+
+    console.log("Updated Data:", updatedData); // Log the updated data for debugging
 
     try {
         const result = await updateProfile(id, updatedData); // Call service function

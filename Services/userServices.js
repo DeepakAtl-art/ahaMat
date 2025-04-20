@@ -247,7 +247,7 @@ const getViewProfile = async (register_id) => {
     u.role
   FROM user_profiles up
   JOIN users u ON up.linked_to = u.id
-  WHERE up.linked_to = ?;
+  WHERE up.id = ?;
 `;
   return new Promise((resolve, reject) => {
       connection.query(GET_USER_PROFILE, [register_id], (err, result) => {
@@ -301,7 +301,10 @@ const addUserInterests = async (user_id, liked_profile_id) => {
 
 
 const updateProfile = async (userId, updatedFields) => {
+  console.log("This is log function");
   const validFields = Object.keys(updatedFields).filter(field => updatedFields[field] !== undefined);
+
+  console.log("The valid fields are: ", userId);
   
   if (validFields.length === 0) {
       throw new Error("No valid fields provided for update.");
