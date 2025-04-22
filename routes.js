@@ -266,11 +266,11 @@ router.post(
           name, gender, city, date_of_birth, time_of_birth, place,
           father_name, mother_name, father_job, mother_job, no_of_siblings, siblings_marital_status,
           marital_status, mother_tongue, blood_group, diet, disability, complexion,
-          caste, sub_caste, gowthram, star, raasi, padam, laknam, job, place_of_job,
+          caste, sub_caste, religion, gowthram, star, raasi, padam, laknam, job, place_of_job,
           qualification, permanent_address, present_address, contact_person, contact_number,
           partner_qualification, partner_job, partner_job_availability,
           partner_diet, partner_marital_status, partner_caste,
-          partner_sub_caste, created_by, linked_to, horoscope
+          partner_sub_caste, created_by, linked_to, horoscope, dasa_balance
         } = cleanedBody;
   
         // Convert numeric values
@@ -301,23 +301,23 @@ router.post(
             name, age, gender, city, date_of_birth, time_of_birth, place,
             father_name, mother_name, father_job, mother_job, no_of_siblings, siblings_marital_status,
             marital_status, mother_tongue, height, weight, blood_group, diet, disability, complexion,
-            caste, sub_caste, gowthram, star, raasi, padam, laknam, job, place_of_job, income_per_month,
+            caste, sub_caste, religion, gowthram, star, raasi, padam, laknam, job, place_of_job, income_per_month,
             qualification, permanent_address, present_address, contact_person, contact_number,
             partner_qualification, partner_job, partner_job_availability, partner_income,
             preferred_age, partner_diet, horoscope_required, partner_marital_status, partner_caste,
-            partner_sub_caste, image_1, image_2, created_by, linked_to, horoscope
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;    
+            partner_sub_caste, image_1, image_2, created_by, linked_to, horoscope, dasa_balance
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;    
   
         // Values array
         const values = [
           name, age, gender, city, date_of_birth, time_of_birth, place,
           father_name, mother_name, father_job, mother_job, no_of_siblings, siblings_marital_status,
           marital_status, mother_tongue, height, weight, blood_group, diet, disability, complexion,
-          caste, sub_caste, gowthram, star, raasi, padam, laknam, job, place_of_job, income_per_month,
+          caste, sub_caste, religion, gowthram, star, raasi, padam, laknam, job, place_of_job, income_per_month,
           qualification, permanent_address, present_address, contact_person, contact_number,
           partner_qualification, partner_job, partner_job_availability, partner_income,
           preferred_age, partner_diet, horoscope_required, partner_marital_status, partner_caste,
-          partner_sub_caste, image_1, image_2, createdBy, linkedTo, JSON.stringify(horoscope)
+          partner_sub_caste, image_1, image_2, createdBy, linkedTo, JSON.stringify(horoscope), dasa_balance
         ];
 
         const user_check_query = `SELECT * FROM user_profiles WHERE created_by = ?`;
@@ -330,7 +330,7 @@ router.post(
 
           if(req.user.role == 'moderator' && userCheck.length > 0){
 
-            console.log("THe user is moderator !!!");
+            console.log("The user is moderator !!!");
             res.json({ success: false,message: "User can't create more that one profile !!" });
           }
           else{
@@ -528,8 +528,8 @@ router.get("/user-interest-profiles/:id",authenticateToken,  (req, res) => {
     const {id} = req.params;
 
     const GET_LIKED_PROFILES = `
-    SELECT up.linked_to, up.name, up.city, up.age, up.image_1 
-    FROM  user_profiles up
+    SELECT up.id, up.linked_to, up.name, up.city, up.age, up.image_1 
+    FROM user_profiles up
     JOIN user_liked_profiles ul ON ul.liked_profiles = up.linked_to
     WHERE ul.user_id = ?
     ORDER BY ul.liked_at DESC;
