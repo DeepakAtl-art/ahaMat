@@ -88,6 +88,25 @@ router.post(
   }
 );
 
+router.post("/verify-payment", async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  const key_secret = process.env.RAZORPAY_SECRET || "WSfCaTByiOPQYfMwn2zNszaA";
+
+  const generated_signature = crypto
+    .createHmac("sha256", key_secret)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest("hex");
+
+  if (generated_signature === razorpay_signature) {
+    res.status(200).json({ verified: true });
+  } else {
+    res.status(400).json({ verified: false, error: "Invalid signature" });
+  }
+});
+
+
+
 // verify payment using Razorpay's payment signature
 
 router.post("/verify-payment", (req, res) => {

@@ -14,6 +14,8 @@ app.post("/create-order", async (req, res) => {
   };
 
   try {
+
+    console.log("Razorpay function !!");
     const order = await razorpay.orders.create(options);
     res.json(order);
   } catch (error) {
