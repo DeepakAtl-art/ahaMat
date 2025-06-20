@@ -342,13 +342,15 @@ const updateProfile = async (userId, updatedFields) => {
     if (field === 'horoscope_required') {
       updatedFields[field] = updatedFields[field] === 'Must' ? 1 : 0;  // Convert 'Must' to 1, otherwise 0
     }
-  });
-  if (field === 'married') {
+
+     if (field === 'married') {
   updatedFields[field] =
     updatedFields[field] === 'true' ||
     updatedFields[field] === '1' ||
     updatedFields[field] === 1;
 }
+  });
+ 
 
   // Prepare SQL query
   const updateQuery = `UPDATE user_profiles SET ${validFields.map(field => `${field} = ?`).join(', ')} WHERE linked_to = ?`;
